@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamer Profile - Game Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#0b0f19',
+                            lightBlue: '#38bdf8',
+                            darkBlue: '#020617',
+                            accent: '#1e293b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-full flex flex-col bg-slate-950 text-slate-100">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- Navigation Header -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 sm:px-8 py-4 sticky top-0 z-30 shadow-lg">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-brand-lightBlue/10 flex items-center justify-center text-brand-lightBlue">
+                    <i class="fa-solid fa-gamepad text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold block">Shared Game Collection</span>
+                    <span class="text-lg font-bold text-white tracking-tight" id="header-user-display">Gamer's List</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button id="copy-share-btn" class="bg-brand-lightBlue hover:bg-opacity-90 text-slate-950 text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl transition shadow-lg shadow-brand-lightBlue/10 flex items-center gap-2">
+                    <i class="fa-solid fa-copy"></i>
+                    <span class="hidden sm:inline">Copy Share Link</span>
+                    <span class="sm:hidden">Share</span>
+                </button>
+                <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl transition border border-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span class="hidden sm:inline">My Tracker</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-8 space-y-6">
+
+        <!-- User Showcase Hero & Stats Banner -->
+        <section class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+            <div class="absolute -right-16 -top-16 w-64 h-64 bg-brand-lightBlue/5 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                <!-- User Info -->
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-lightBlue to-sky-600 flex items-center justify-center text-slate-950 text-2xl font-black shadow-lg shadow-brand-lightBlue/20" id="avatar-initial">
+                        G
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-2xl sm:text-3xl font-black text-white" id="profile-username">Player</h1>
+                            <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                Verified Journal
+                            </span>
+                        </div>
+                        <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Games played, reviews, characters & achievements</p>
+                    </div>
+                </div>
+
+                <!-- Stats summary chips -->
+                <div class="grid grid-cols-3 gap-3 sm:gap-4 shrink-0">
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 text-center min-w-[80px]">
+                        <span class="block text-lg sm:text-2xl font-black text-white" id="stat-total-games">0</span>
+                        <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Games</span>
+                    </div>
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 text-center min-w-[80px]">
+                        <span class="block text-lg sm:text-2xl font-black text-brand-lightBlue" id="stat-total-hours">0h</span>
+                        <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Playtime</span>
+                    </div>
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 text-center min-w-[80px]">
+                        <span class="block text-lg sm:text-2xl font-black text-amber-400 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-star text-xs"></i><span id="stat-avg-rating">0</span>
+                        </span>
+                        <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Avg Rating</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Filter Bar inside Hero -->
+            <div class="mt-6 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="relative w-full sm:w-96">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                    </span>
+                    <input type="text" id="share-search-filter" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-lightBlue transition" placeholder="Search by game, character, boss, thoughts...">
+                </div>
+
+                <div class="text-xs text-slate-400 flex items-center gap-1.5 self-end sm:self-center">
+                    <i class="fa-solid fa-layer-group text-slate-500"></i>
+                    <span>Showing: <strong class="text-white" id="showing-count">0</strong> games</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Horizontal Game Cards Container -->
+        <section id="horizontal-games-list" class="space-y-4">
+            <!-- Loading state -->
+            <div id="loading-state" class="py-20 text-center text-slate-500">
+                <i class="fa-solid fa-spinner animate-spin text-3xl text-brand-lightBlue mb-3"></i>
+                <p class="text-sm">Loading games collection...</p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 border-t border-slate-800 py-6 text-center text-xs text-slate-500 mt-12">
+        <p>Game Tracker &bull; Share your gaming journey with friends</p>
+    </footer>
+
+    <script>
+        // API Base configuration:
+        // - If deployed on the cloud / internet, or running on local Express (port 3000): use relative ''
+        // - Only if developing locally on VS Code Live Server (port 5500) or file://: use 'http://localhost:3000'
+        const isLocalDevProxy = window.location.port === '5500' || window.location.protocol === 'file:';
+        const API_BASE = isLocalDevProxy ? 'http://localhost:3000' : '';
+
+        let allGames = [];
+        let currentTargetUser = '';
+
+        // Extract username from URL: either /share/:username or ?user=:username or ?u=:username
+        function getUsernameFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userParam = urlParams.get('user') || urlParams.get('u');
+            if (userParam) return userParam;
+
+            // Check pathname e.g. /share/raghavv
+            const segments = window.location.pathname.split('/').filter(Boolean);
+            const shareIdx = segments.indexOf('share');
+            if (shareIdx !== -1 && segments[shareIdx + 1]) {
+                return decodeURIComponent(segments[shareIdx + 1]);
+            }
+            return '';
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-emerald-600';
+            let iconClass = 'fa-circle-check';
+            if (type === 'error') {
+                bgClass = 'bg-rose-600';
+                iconClass = 'fa-circle-exclamation';
+            }
+
+            toast.className = `flex items-center gap-2.5 ${bgClass} text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 max-w-sm break-words`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass}"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        async function loadSharedGames() {
+            const username = getUsernameFromUrl();
+            currentTargetUser = username;
+
+            if (!username) {
+                renderNotFound("No username provided in the share link.");
+                return;
+            }
+
+            document.getElementById('profile-username').textContent = username;
+            document.getElementById('header-user-display').textContent = `${username}'s List`;
+            document.getElementById('avatar-initial').textContent = username.charAt(0).toUpperCase();
+            document.title = `${username}'s Games - Game Tracker`;
+
+            try {
+                let data = null;
+
+                // 1. Attempt to fetch from public share endpoint
+                try {
+                    const response = await fetch(`${API_BASE}/api/public/games/${encodeURIComponent(username)}`);
+                    if (response.ok) {
+                        const text = await response.text();
+                        if (text && text.trim().startsWith('{')) {
+                            data = JSON.parse(text);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Public endpoint not responding:", e);
+                }
+
+                // 2. Fallback: if server hasn't been restarted yet, but owner is viewing their own share page:
+                if (!data || !data.games) {
+                    const token = localStorage.getItem('token');
+                    const localUser = localStorage.getItem('username');
+                    if (token && localUser && localUser.toLowerCase() === username.toLowerCase()) {
+                        try {
+                            const authRes = await fetch(`${API_BASE}/api/games`, {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (authRes.ok) {
+                                const games = await authRes.json();
+                                data = { username, games };
+                            }
+                        } catch (e) {
+                            console.warn("Fallback auth games fetch failed:", e);
+                        }
+                    }
+                }
+
+                if (!data || !data.games) {
+                    throw new Error("Endpoint did not return games list");
+                }
+
+                allGames = data.games || [];
+                updateStats(allGames);
+                renderHorizontalCards(allGames);
+            } catch (err) {
+                console.error(err);
+                renderNotFound(`Please restart your server in terminal: stop it with Ctrl+C, run "node server.js", and refresh!`);
+            }
+        }
+
+        function updateStats(games) {
+            document.getElementById('stat-total-games').textContent = games.length;
+
+            const totalHours = games.reduce((acc, g) => acc + (parseFloat(g.hours) || 0), 0);
+            document.getElementById('stat-total-hours').textContent = `${totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1)}h`;
+
+            if (games.length > 0) {
+                const sumRatings = games.reduce((acc, g) => acc + (parseFloat(g.rating) || 0), 0);
+                const avg = (sumRatings / games.length).toFixed(1);
+                document.getElementById('stat-avg-rating').textContent = `${avg}/10`;
+            } else {
+                document.getElementById('stat-avg-rating').textContent = 'N/A';
+            }
+        }
+
+        function renderHorizontalCards(games) {
+            const container = document.getElementById('horizontal-games-list');
+            document.getElementById('showing-count').textContent = games.length;
+
+            if (games.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl py-16 px-6 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+                        <i class="fa-solid fa-gamepad text-5xl text-slate-700"></i>
+                        <div>
+                            <p class="font-bold text-slate-300 text-lg">No games to display</p>
+                            <p class="text-sm text-slate-500 mt-1">This user hasn't recorded any games matching this search.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = games.map(game => {
+                const hasImage = game.image && !game.image.includes('placeholder.com') && !game.image.includes('via.placeholder');
+                
+                // Left Image Banner
+                const imageHtml = hasImage 
+                    ? `<img src="${game.image}" alt="${escapeHtml(game.name)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">`
+                    : `<div class="w-full h-full bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center text-slate-700 group-hover:scale-105 transition duration-500">
+                         <i class="fa-solid fa-gamepad text-5xl opacity-20 text-brand-lightBlue"></i>
+                       </div>`;
+
+                // Custom dynamic columns rendered horizontally as badges
+                let customFieldsHtml = '';
+                if (game.customFields && Object.keys(game.customFields).length > 0) {
+                    customFieldsHtml = `
+                        <div class="mt-3 pt-3 border-t border-slate-800/60 flex flex-wrap gap-2">
+                            ${Object.entries(game.customFields).map(([key, val]) => `
+                                <div class="bg-slate-950/90 border border-slate-800 text-xs px-3 py-1 rounded-xl flex items-center gap-1.5 shadow-sm">
+                                    <span class="text-brand-lightBlue font-semibold uppercase tracking-wider text-[10px]">${escapeHtml(key)}:</span>
+                                    <span class="text-slate-200 font-medium">${escapeHtml(val)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                // Horizontal Card: Left banner (width on md: 240px to 280px), Right body flex-1
+                return `
+                    <div class="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 flex flex-col md:flex-row group">
+                        
+                        <!-- Left Side: Cover Image / Banner (Horizontal Layout) -->
+                        <div class="relative md:w-64 lg:w-72 h-48 md:h-auto shrink-0 bg-slate-950 overflow-hidden">
+                            ${imageHtml}
+                            <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-transparent to-slate-900/60 pointer-events-none"></div>
+
+                            <!-- Rating overlay tag on mobile & banner -->
+                            <div class="absolute top-3 left-3 bg-slate-950/85 backdrop-blur-md border border-brand-lightBlue/30 text-brand-lightBlue text-xs font-black px-3 py-1 rounded-full shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-star text-amber-400"></i> ${game.rating || 0}/10
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Details in Horizontal Layout -->
+                        <div class="flex-1 p-5 sm:p-6 flex flex-col justify-between">
+                            <div class="space-y-3">
+                                <!-- Top Bar: Title & Primary Stats -->
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
+                                    <h3 class="text-xl sm:text-2xl font-black text-white tracking-tight" title="${escapeHtml(game.name)}">
+                                        ${escapeHtml(game.name)}
+                                    </h3>
+
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <!-- Playtime badge -->
+                                        <span class="bg-slate-950 border border-slate-800 text-slate-300 text-xs px-3 py-1 rounded-xl font-medium flex items-center gap-1.5">
+                                            <i class="fa-regular fa-clock text-brand-lightBlue"></i>
+                                            <strong>${game.hours || 0} hrs</strong>
+                                        </span>
+
+                                        <!-- Rating badge (Right) -->
+                                        <span class="hidden sm:inline-flex bg-brand-lightBlue/10 border border-brand-lightBlue/30 text-brand-lightBlue text-xs px-3 py-1 rounded-xl font-bold items-center gap-1">
+                                            <i class="fa-solid fa-star text-amber-400"></i> ${game.rating || 0}/10
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Middle Bar: Favorite Character & Thoughts -->
+                                <div class="space-y-2">
+                                    ${game.favoriteCharacter ? `
+                                        <div class="flex items-center gap-2 text-xs text-slate-300">
+                                            <span class="bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-slate-400 font-semibold uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                                                <i class="fa-solid fa-user-astronaut text-brand-lightBlue"></i> Favorite Character
+                                            </span>
+                                            <span class="text-sm font-bold text-white">${escapeHtml(game.favoriteCharacter)}</span>
+                                        </div>
+                                    ` : ''}
+
+                                    ${game.thoughts ? `
+                                        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/50 text-slate-300 text-xs sm:text-sm leading-relaxed italic">
+                                            "${escapeHtml(game.thoughts)}"
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <!-- Bottom: Custom columns in horizontal badges -->
+                                ${customFieldsHtml}
+                            </div>
+
+                            <div class="mt-3 pt-2 flex items-center justify-between text-[11px] text-slate-500">
+                                <span>Logged: ${game.addedAt ? new Date(game.addedAt).toLocaleDateString() : 'Recent'}</span>
+                                <span class="flex items-center gap-1 text-slate-400">
+                                    <i class="fa-solid fa-circle-check text-emerald-400 text-[10px]"></i> Saved by ${escapeHtml(currentTargetUser)}
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderNotFound(message) {
+            document.getElementById('horizontal-games-list').innerHTML = `
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl py-16 px-6 text-center text-slate-500 flex flex-col items-center justify-center gap-4">
+                    <div class="w-16 h-16 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center text-2xl">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-300 text-lg">Unable to display collection</p>
+                        <p class="text-sm text-slate-400 mt-1 max-w-md mx-auto">${message}</p>
+                    </div>
+                    <a href="index.html" class="mt-2 bg-brand-lightBlue text-slate-950 font-bold px-4 py-2 rounded-xl text-xs hover:bg-opacity-90 transition">
+                        Go to Main Game Tracker
+                    </a>
+                </div>
+            `;
+        }
+
+        // Live search filter across title, character, review thoughts, and custom columns
+        document.getElementById('share-search-filter').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                renderHorizontalCards(allGames);
+                return;
+            }
+
+            const filtered = allGames.filter(g => {
+                const nameMatch = g.name && g.name.toLowerCase().includes(query);
+                const charMatch = g.favoriteCharacter && g.favoriteCharacter.toLowerCase().includes(query);
+                const thoughtsMatch = g.thoughts && g.thoughts.toLowerCase().includes(query);
+                const customMatch = g.customFields && Object.entries(g.customFields).some(([k, v]) => 
+                    k.toLowerCase().includes(query) || (v && v.toLowerCase().includes(query))
+                );
+                return nameMatch || charMatch || thoughtsMatch || customMatch;
+            });
+
+            renderHorizontalCards(filtered);
+        });
+
+        // Copy Share Link button
+        document.getElementById('copy-share-btn').addEventListener('click', async () => {
+            const currentUrl = window.location.href;
+            try {
+                await navigator.clipboard.writeText(currentUrl);
+                showToast("Share link copied to clipboard! Send it to your friend.", "success");
+            } catch (err) {
+                // Fallback prompt
+                prompt("Copy this share link:", currentUrl);
+            }
+        });
+
+        // Escape Helpers
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', loadSharedGames);
+    </script>
+</body>
+</html>

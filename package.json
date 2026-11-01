@@ -1,0 +1,14 @@
+{
+  "name": "steam-game-tracker",
+  "version": "1.0.0",
+  "description": "Log and track played Steam games, with ratings, favorite characters, custom fields, and SteamDB links.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
