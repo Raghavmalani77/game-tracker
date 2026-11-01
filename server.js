@@ -159,6 +159,35 @@ app.get('/api/search', async (req, res) => {
   }
 });
 
+// Known fallback game covers to ensure images always render
+const KNOWN_COVERS = {
+  'detroit': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222140/header.jpg',
+  'ghost of tsushima': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2215430/header.jpg',
+  'a way out': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222700/header.jpg',
+  'clair obscur': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
+  'expedition 33': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
+  'uncharted': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1659420/header.jpg',
+  'the last of us part ii': 'https://image.api.playstation.com/vulcan/ap/rnd/202311/1717/74087195d733cf621cfad2f3b92d7747e9cb6ab2a343eb89.png',
+  'the last of us': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1888930/header.jpg',
+  'red dead redemption 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg',
+  'rdr2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg'
+};
+
+function enrichGame(game) {
+  if (!game) return game;
+  let img = game.image;
+  if (!img || img.includes('placeholder.com') || img.includes('via.placeholder')) {
+    const lower = (game.name || '').toLowerCase();
+    for (const [key, url] of Object.entries(KNOWN_COVERS)) {
+      if (lower.includes(key)) {
+        img = url;
+        break;
+      }
+    }
+  }
+  return { ...game, image: img || 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg' };
+}
+
 // Public Share Endpoint (No authentication required - read-only list for sharing)
 app.get('/api/public/games/:username', (req, res) => {
   const targetUsername = req.params.username.trim().toLowerCase();
@@ -171,7 +200,7 @@ app.get('/api/public/games/:username', (req, res) => {
   res.json({
     username: req.params.username,
     count: userGames.length,
-    games: userGames
+    games: userGames.map(enrichGame)
   });
 });
 
@@ -192,7 +221,7 @@ app.get('/api/games', authenticateToken, (req, res) => {
   // Sort games by added date descending
   userGames.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
   
-  res.json(userGames);
+  res.json(userGames.map(enrichGame));
 });
 
 app.post('/api/games', authenticateToken, (req, res) => {

@@ -209,28 +209,55 @@ function renderGamesGrid() {
       `;
     }
 
-    const hasImage = game.image && !game.image.includes('placeholder.com') && !game.image.includes('via.placeholder');
+    const KNOWN_COVERS = {
+      'detroit': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222140/header.jpg',
+      'ghost of tsushima': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2215430/header.jpg',
+      'a way out': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222700/header.jpg',
+      'clair obscur': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
+      'expedition 33': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
+      'uncharted': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1659420/header.jpg',
+      'the last of us part ii': 'https://image.api.playstation.com/vulcan/ap/rnd/202311/1717/74087195d733cf621cfad2f3b92d7747e9cb6ab2a343eb89.png',
+      'the last of us': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1888930/header.jpg',
+      'red dead redemption 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg',
+      'rdr2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg'
+    };
+
+    let coverUrl = (game.image && !game.image.includes('placeholder.com') && !game.image.includes('via.placeholder')) ? game.image : '';
+    if (!coverUrl) {
+      const lower = (game.name || '').toLowerCase();
+      for (const [key, url] of Object.entries(KNOWN_COVERS)) {
+        if (lower.includes(key)) {
+          coverUrl = url;
+          break;
+        }
+      }
+    }
+
+    const hasImage = Boolean(coverUrl);
     const imageHtml = hasImage 
-      ? `<img src="${game.image}" alt="${escapeHtml(game.name)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">`
-      : `<div class="w-full h-full bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center text-slate-700 group-hover:scale-105 transition duration-500">
+      ? `<img src="${coverUrl}" alt="${escapeHtml(game.name)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+         <div class="w-full h-full bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center text-slate-700 hidden">
+           <i class="fa-solid fa-gamepad text-5xl opacity-20 text-brand-lightBlue"></i>
+         </div>`
+      : `<div class="w-full h-full bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center text-slate-700">
            <i class="fa-solid fa-gamepad text-5xl opacity-20 text-brand-lightBlue"></i>
          </div>`;
 
     return `
-      <div class="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:border-slate-700/80 transition duration-300 flex flex-col">
-        <!-- Banner Image -->
-        <div class="relative h-32 w-full bg-slate-950 overflow-hidden group">
+      <div class="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:border-slate-700/80 transition duration-300 flex flex-col h-full min-h-[340px]">
+        <!-- Banner Image (shrink-0 prevents image from collapsing or cutting off) -->
+        <div class="relative h-40 shrink-0 w-full bg-slate-950 overflow-hidden group">
           ${imageHtml}
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
           
           <!-- Rating Overlay Badge -->
-          <div class="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md border border-brand-lightBlue/30 text-brand-lightBlue text-xs font-black px-2.5 py-1 rounded-full shadow flex items-center gap-1">
+          <div class="absolute top-3 right-3 bg-slate-950/85 backdrop-blur-md border border-brand-lightBlue/30 text-brand-lightBlue text-xs font-black px-2.5 py-1 rounded-full shadow flex items-center gap-1 z-10">
             <i class="fa-solid fa-star text-amber-400"></i> ${game.rating}/10
           </div>
 
-          <!-- Title Overlay -->
-          <div class="absolute bottom-2 left-4 right-4">
-            <h3 class="text-white font-extrabold text-lg truncate drop-shadow-md" title="${escapeHtml(game.name)}">
+          <!-- Title Overlay (Crisp, high-contrast typography) -->
+          <div class="absolute bottom-2.5 left-4 right-4 z-10">
+            <h3 class="text-white font-black text-lg line-clamp-2 leading-snug drop-shadow-lg" title="${escapeHtml(game.name)}">
               ${escapeHtml(game.name)}
             </h3>
           </div>
