@@ -150,19 +150,67 @@ function toggleAuthForm(formType) {
   }
 }
 
-// Fetch Games from Server
-async function fetchGamesList() {
-  const container = document.getElementById('games-list-container');
-  container.innerHTML = `
-    <div class="col-span-full py-16 text-center text-slate-500">
-      <i class="fa-solid fa-spinner animate-spin text-3xl text-brand-lightBlue"></i>
-      <p class="mt-2 text-sm">Loading your games...</p>
-    </div>
-  `;
+// Local Storage Persistent Cache Helpers
+function getLocalCacheKey() {
+  return `cached_games_${username || 'user'}`;
+}
 
-  const data = await apiFetch('/api/games');
-  if (data) {
-    gamesList = data;
+function saveGamesToLocalCache(games) {
+  try {
+    localStorage.setItem(getLocalCacheKey(), JSON.stringify(games));
+  } catch (e) {
+    console.warn('LocalStorage save failed:', e);
+  }
+}
+
+function getGamesFromLocalCache() {
+  try {
+    const raw = localStorage.getItem(getLocalCacheKey());
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// Fetch Games from Server (with auto-rehydration from local cache if Render spun down)
+async function fetchGamesList() {
+  const cached = getGamesFromLocalCache();
+  if (cached && cached.length > 0) {
+    gamesList = cached;
+    renderGamesGrid();
+  }
+
+  const container = document.getElementById('games-list-container');
+  if (gamesList.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-16 text-center text-slate-500">
+        <i class="fa-solid fa-spinner animate-spin text-3xl text-brand-lightBlue"></i>
+        <p class="mt-2 text-sm">Loading your games...</p>
+      </div>
+    `;
+  }
+
+  const serverGames = await apiFetch('/api/games');
+  if (serverGames) {
+    const serverGameNames = new Set(serverGames.map(g => (g.name || '').toLowerCase().trim()));
+    const missingOnServer = cached.filter(cg => !serverGameNames.has((cg.name || '').toLowerCase().trim()));
+
+    if (missingOnServer.length > 0) {
+      console.log(`Auto-rehydrating server with ${missingOnServer.length} local games...`);
+      const syncResult = await apiFetch('/api/games/sync', {
+        method: 'POST',
+        body: JSON.stringify({ games: missingOnServer })
+      });
+      if (syncResult && syncResult.games) {
+        gamesList = syncResult.games;
+      } else {
+        gamesList = [...serverGames, ...missingOnServer];
+      }
+    } else {
+      gamesList = serverGames;
+    }
+
+    saveGamesToLocalCache(gamesList);
     renderGamesGrid();
   }
 }
@@ -193,6 +241,21 @@ function renderGamesGrid() {
     return;
   }
 
+  const KNOWN_COVERS = {
+    'detroit': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222140/header.jpg',
+    'ghost of tsushima': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2215430/header.jpg',
+    'a way out': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222700/header.jpg',
+    'clair obscur': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/header.jpg',
+    'expedition 33': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/header.jpg',
+    'uncharted': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1659420/header.jpg',
+    'the last of us part ii': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg',
+    'the last of us 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg',
+    'last of us 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg',
+    'the last of us': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1888930/header.jpg',
+    'red dead redemption 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg',
+    'rdr2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg'
+  };
+
   container.innerHTML = filteredGames.map(game => {
     // Convert custom fields keys/values into HTML snippet
     let customFieldsHtml = '';
@@ -209,20 +272,19 @@ function renderGamesGrid() {
       `;
     }
 
-    const KNOWN_COVERS = {
-      'detroit': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222140/header.jpg',
-      'ghost of tsushima': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2215430/header.jpg',
-      'a way out': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222700/header.jpg',
-      'clair obscur': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
-      'expedition 33': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
-      'uncharted': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1659420/header.jpg',
-      'the last of us part ii': 'https://image.api.playstation.com/vulcan/ap/rnd/202311/1717/74087195d733cf621cfad2f3b92d7747e9cb6ab2a343eb89.png',
-      'the last of us': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1888930/header.jpg',
-      'red dead redemption 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg',
-      'rdr2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg'
-    };
-
     let coverUrl = (game.image && !game.image.includes('placeholder.com') && !game.image.includes('via.placeholder')) ? game.image : '';
+
+    // Fix incorrect Food Truck simulator id if saved
+    if (game.name && game.name.toLowerCase().includes('clair obscur') && (!coverUrl || coverUrl.includes('1903380'))) {
+      coverUrl = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/header.jpg';
+    }
+    // Fix TLOU Part 2 PlayStation hotlinked image
+    if (game.name && (game.name.toLowerCase().includes('last of us') && (game.name.includes('II') || game.name.includes('2')))) {
+      if (!coverUrl || coverUrl.includes('playstation')) {
+        coverUrl = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg';
+      }
+    }
+
     if (!coverUrl) {
       const lower = (game.name || '').toLowerCase();
       for (const [key, url] of Object.entries(KNOWN_COVERS)) {
@@ -492,6 +554,7 @@ async function handleAddGameSubmit(e) {
   if (newGame) {
     showToast(`${name} has been added!`, 'success');
     gamesList.unshift(newGame); // Add to beginning of grid
+    saveGamesToLocalCache(gamesList);
     renderGamesGrid();
     
     // Reset Form
@@ -610,7 +673,7 @@ async function handleEditGameSubmit(e) {
     if (index !== -1) {
       gamesList[index] = updatedGame;
     }
-    
+    saveGamesToLocalCache(gamesList);
     renderGamesGrid();
     closeEditModal();
   }
@@ -629,6 +692,7 @@ async function deleteGame(gameId) {
     if (data) {
       showToast(`${game.name} has been deleted.`, 'info');
       gamesList = gamesList.filter(g => g.id !== gameId);
+      saveGamesToLocalCache(gamesList);
       renderGamesGrid();
     }
   }
@@ -687,6 +751,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Logout button
   document.getElementById('logout-btn').addEventListener('click', logout);
+
+  // Backup Games button
+  const backupBtn = document.getElementById('backup-btn');
+  if (backupBtn) {
+    backupBtn.addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(gamesList, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "games.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Downloaded games.json backup! Keep it safe or commit to GitHub.', 'success');
+    });
+  }
 
   // Share List button
   const shareListBtn = document.getElementById('share-list-btn');

@@ -299,10 +299,12 @@
                 'detroit': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222140/header.jpg',
                 'ghost of tsushima': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2215430/header.jpg',
                 'a way out': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222700/header.jpg',
-                'clair obscur': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
-                'expedition 33': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
+                'clair obscur': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/header.jpg',
+                'expedition 33': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/header.jpg',
                 'uncharted': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1659420/header.jpg',
-                'the last of us part ii': 'https://image.api.playstation.com/vulcan/ap/rnd/202311/1717/74087195d733cf621cfad2f3b92d7747e9cb6ab2a343eb89.png',
+                'the last of us part ii': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg',
+                'the last of us 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg',
+                'last of us 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg',
                 'the last of us': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1888930/header.jpg',
                 'red dead redemption 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg',
                 'rdr2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg'
@@ -310,6 +312,18 @@
 
             container.innerHTML = games.map(game => {
                 let coverUrl = (game.image && !game.image.includes('placeholder.com') && !game.image.includes('via.placeholder')) ? game.image : '';
+                
+                // Fix Food truck id
+                if (game.name && game.name.toLowerCase().includes('clair obscur') && (!coverUrl || coverUrl.includes('1903380'))) {
+                    coverUrl = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/header.jpg';
+                }
+                // Fix TLOU Part 2
+                if (game.name && (game.name.toLowerCase().includes('last of us') && (game.name.includes('II') || game.name.includes('2')))) {
+                    if (!coverUrl || coverUrl.includes('playstation')) {
+                        coverUrl = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg';
+                    }
+                }
+
                 if (!coverUrl) {
                     const lower = (game.name || '').toLowerCase();
                     for (const [key, url] of Object.entries(KNOWN_COVERS)) {

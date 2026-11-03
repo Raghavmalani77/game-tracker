@@ -164,10 +164,12 @@ const KNOWN_COVERS = {
   'detroit': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222140/header.jpg',
   'ghost of tsushima': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2215430/header.jpg',
   'a way out': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222700/header.jpg',
-  'clair obscur': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
-  'expedition 33': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903380/header.jpg',
+  'clair obscur': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/header.jpg',
+  'expedition 33': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/header.jpg',
   'uncharted': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1659420/header.jpg',
-  'the last of us part ii': 'https://image.api.playstation.com/vulcan/ap/rnd/202311/1717/74087195d733cf621cfad2f3b92d7747e9cb6ab2a343eb89.png',
+  'the last of us part ii': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg',
+  'the last of us 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg',
+  'last of us 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg',
   'the last of us': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1888930/header.jpg',
   'red dead redemption 2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg',
   'rdr2': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg'
@@ -176,6 +178,19 @@ const KNOWN_COVERS = {
 function enrichGame(game) {
   if (!game) return game;
   let img = game.image;
+  // If appid is 1903380 (Food Truck accidentally saved), fix to 1903340 (Expedition 33)
+  if (game.name && game.name.toLowerCase().includes('clair obscur') && (!img || img.includes('1903380') || img.includes('placeholder'))) {
+    img = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/header.jpg';
+    game.appid = '1903340';
+  }
+  // If TLOU Part II has playstation api or broken image, fix to Steam 2531310 header
+  if (game.name && (game.name.toLowerCase().includes('last of us') && (game.name.includes('II') || game.name.includes('2')))) {
+    if (!img || img.includes('playstation') || img.includes('placeholder')) {
+      img = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2531310/header.jpg';
+      game.appid = '2531310';
+    }
+  }
+
   if (!img || img.includes('placeholder.com') || img.includes('via.placeholder')) {
     const lower = (game.name || '').toLowerCase();
     for (const [key, url] of Object.entries(KNOWN_COVERS)) {
@@ -222,6 +237,46 @@ app.get('/api/games', authenticateToken, (req, res) => {
   userGames.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
   
   res.json(userGames.map(enrichGame));
+});
+
+// Auto-sync endpoint: rehydrates server if container spun down and lost ephemeral writes
+app.post('/api/games/sync', authenticateToken, (req, res) => {
+  const { games: clientGames } = req.body;
+  if (!Array.isArray(clientGames)) {
+    return res.status(400).json({ error: 'Expected games array' });
+  }
+
+  const allGames = readJSONFile(GAMES_FILE);
+  let addedCount = 0;
+
+  clientGames.forEach(cg => {
+    if (!cg || !cg.name) return;
+    const exists = allGames.some(g => g.username === req.user.username && (g.id === cg.id || g.name.toLowerCase() === cg.name.toLowerCase()));
+    if (!exists) {
+      allGames.push({
+        id: cg.id || crypto.randomUUID(),
+        username: req.user.username,
+        appid: cg.appid || null,
+        name: cg.name.trim(),
+        image: cg.image || '',
+        favoriteCharacter: cg.favoriteCharacter || '',
+        thoughts: cg.thoughts || '',
+        rating: typeof cg.rating === 'number' ? cg.rating : 10,
+        hours: typeof cg.hours === 'number' ? cg.hours : 0,
+        customFields: cg.customFields || {},
+        addedAt: cg.addedAt || new Date().toISOString()
+      });
+      addedCount++;
+    }
+  });
+
+  if (addedCount > 0) {
+    writeJSONFile(GAMES_FILE, allGames);
+  }
+
+  const userGames = allGames.filter(g => g.username === req.user.username);
+  userGames.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+  res.json({ synced: addedCount, games: userGames.map(enrichGame) });
 });
 
 app.post('/api/games', authenticateToken, (req, res) => {
